@@ -28,10 +28,52 @@
       </Grid>
     </Border>
 
-    <Border Grid.Row="1" Padding="10" Background="#FFFFFF" BorderBrush="#CBD5E1" BorderThickness="1" CornerRadius="12">
-      <scott:AvaPlot x:Name="PlotControl"
-                     Tapped="PlotControl_OnTapped" />
-    </Border>
+    <Grid Grid.Row="1" ColumnDefinitions="*,340" ColumnSpacing="12">
+      <Border Padding="10" Background="#FFFFFF" BorderBrush="#CBD5E1" BorderThickness="1" CornerRadius="12">
+        <scott:AvaPlot x:Name="PlotControl"
+                       Tapped="PlotControl_OnTapped" />
+      </Border>
+
+      <Border Grid.Column="1" Padding="14" Background="#F8FAFC" BorderBrush="#CBD5E1" BorderThickness="1" CornerRadius="12">
+        <Grid RowDefinitions="Auto,Auto,*" RowSpacing="10">
+          <TextBlock FontSize="18"
+                     FontWeight="SemiBold"
+                     Text="Measurements" />
+          <TextBlock Grid.Row="1"
+                     Foreground="#475569"
+                     Text="Selected measurement markers are shown on the plot."
+                     TextWrapping="Wrap" />
+          <ListBox Grid.Row="2"
+                   ItemsSource="{Binding Measurements}"
+                   SelectedItem="{Binding SelectedMeasurement}"
+                   Background="Transparent"
+                   BorderThickness="0">
+            <ListBox.ItemTemplate>
+              <DataTemplate>
+                <Border Margin="0,0,0,8"
+                        Padding="12"
+                        Background="#FFFFFF"
+                        BorderBrush="#CBD5E1"
+                        BorderThickness="1"
+                        CornerRadius="10">
+                  <StackPanel Spacing="6">
+                    <TextBlock FontSize="15"
+                               FontWeight="SemiBold"
+                               Text="{Binding DisplayName}" />
+                    <TextBlock FontFamily="Consolas"
+                               FontSize="16"
+                               Text="{Binding ValueText}" />
+                    <TextBlock Foreground="#475569"
+                               Text="{Binding DetailText}"
+                               TextWrapping="Wrap" />
+                  </StackPanel>
+                </Border>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+        </Grid>
+      </Border>
+    </Grid>
 
     <Grid Grid.Row="2" ColumnDefinitions="*,Auto" ColumnSpacing="12">
       <Border Padding="12" Background="#F8FAFC" BorderBrush="#CBD5E1" BorderThickness="1" CornerRadius="10">

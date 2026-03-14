@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
@@ -5,6 +6,7 @@ using ScottPlot;
 using ScottPlot.Avalonia;
 using ScottPlot.Plottables;
 using WaveformLoader.App.ViewModels;
+using WaveformLoader.Core.Measurements;
 using WaveformLoader.Core.Models;
 using WaveformLoader.Core.Utilities;
 
@@ -15,6 +17,7 @@ public partial class WaveformPlotWindow : Window
     private readonly WaveformSeries _series;
     private readonly WaveformPlotWindowViewModel _viewModel;
     private readonly AvaPlot _plotControl;
+    private readonly List<IPlottable> _measurementPlottables = [];
     private Signal? _signalPlot;
     private Scatter? _scatterPlot;
     private Crosshair? _crosshair;
@@ -34,6 +37,7 @@ public partial class WaveformPlotWindow : Window
         Title = _viewModel.WindowTitle;
         _plotControl = this.FindControl<AvaPlot>("PlotControl")
             ?? throw new InvalidOperationException("Plot control was not found.");
+        _viewModel.PropertyChanged += ViewModel_OnPropertyChanged;
 
         Opened += (_, _) =>
         {
@@ -53,6 +57,8 @@ public partial class WaveformPlotWindow : Window
                 RefreshExplicitScatterForCurrentLimits();
             }
         };
+
+        Closed += (_, _) => _viewModel.PropertyChanged -= ViewModel_OnPropertyChanged;
     }
 
     private void ConfigurePlot()
@@ -85,7 +91,10 @@ public partial class WaveformPlotWindow : Window
             RefreshExplicitScatterForCurrentLimits(useFullExtent: true, refreshControl: false);
         }
 
-        FitToFullExtent();
+        _viewModel.RefreshMeasurements();
+        FitToFullExtent(refreshControl: false);
+        RenderSelectedMeasurementMarkers(refreshControl: false);
+        _plotControl.Refresh();
     }
 
     private void ResetButton_OnClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
@@ -131,7 +140,15 @@ public partial class WaveformPlotWindow : Window
         }
     }
 
-    private void FitToFullExtent()
+    private void ViewModel_OnPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (_isInitialized && e.PropertyName == nameof(WaveformPlotWindowViewModel.SelectedMeasurement))
+        {
+            RenderSelectedMeasurementMarkers();
+        }
+    }
+
+    private void FitToFullExtent(bool refreshControl = true)
     {
         var xMin = _series.UsesImplicitX ? 0 : _series.XValues!.Min();
         var xMax = _series.UsesImplicitX ? Math.Max(1, _series.SampleCount - 1) : _series.XValues!.Max();
@@ -149,9 +166,59 @@ public partial class WaveformPlotWindow : Window
 
         if (!_series.UsesImplicitX)
         {
-            RefreshExplicitScatterForCurrentLimits();
+            RefreshExplicitScatterForCurrentLimits(refreshControl: refreshControl);
         }
-        else
+        else if (refreshControl)
+        {
+            _plotControl.Refresh();
+        }
+    }
+
+    private void RenderSelectedMeasurementMarkers(bool refreshControl = true)
+    {
+        var plot = _plotControl.Plot;
+
+        foreach (var plottable in _measurementPlottables)
+        {
+            plot.Remove(plottable);
+        }
+
+        _measurementPlottables.Clear();
+
+        if (_viewModel.SelectedMeasurement is not { } measurement)
+        {
+            if (refreshControl)
+            {
+                _plotControl.Refresh();
+            }
+
+            return;
+        }
+
+        foreach (var marker in measurement.Markers)
+        {
+            var style = GetMeasurementLineStyle(marker);
+            var line = plot.Add.HorizontalLine(marker.Y, 2f, style.Color, ScottPlot.LinePattern.Solid);
+            line.EnableAutoscale = false;
+            line.LineColor = style.Color;
+            line.LineWidth = 2;
+            line.LabelText = marker.Label;
+            line.LabelAlignment = style.Alignment;
+            line.ManualLabelAlignment = style.Alignment;
+            line.LabelBackgroundColor = ScottPlot.Colors.White;
+            line.LabelBorderColor = style.Color;
+            line.LabelBorderWidth = 1;
+            line.LabelPadding = 4;
+            line.LabelBold = true;
+            line.LabelFontName = "Consolas";
+            line.LabelFontSize = 12;
+            line.LabelFontColor = style.Color;
+            line.LabelOffsetX = -8;
+            line.LabelOffsetY = style.OffsetY;
+            _measurementPlottables.Add(line);
+        }
+
+        if (refreshControl)
         {
             _plotControl.Refresh();
         }
@@ -211,4 +278,12 @@ public partial class WaveformPlotWindow : Window
             _isRefreshingExplicitScatter = false;
         }
     }
+
+    private static (ScottPlot.Color Color, Alignment Alignment, float OffsetY) GetMeasurementLineStyle(WaveformMeasurementMarker marker) =>
+        marker.Kind switch
+        {
+            WaveformMeasurementMarkerKind.Maximum => (ScottPlot.Colors.OrangeRed, Alignment.UpperRight, -6f),
+            WaveformMeasurementMarkerKind.Minimum => (ScottPlot.Colors.DodgerBlue, Alignment.LowerRight, 6f),
+            _ => (ScottPlot.Colors.DarkOrange, Alignment.UpperRight, 0f)
+        };
 }
