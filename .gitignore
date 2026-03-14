@@ -1,0 +1,63 @@
+# Environment files
+.env
+.env.*
+
+# Local .NET CLI state used by this repo
+.dotnet/
+
+# Build output
+**/bin/
+**/obj/
+[Dd]ebug/
+[Rr]elease/
+artifacts/
+publish/
+
+# Test output and coverage
+TestResults/
+coverage/
+coverage*.json
+coverage*.xml
+coverage*.info
+*.coverage
+*.coveragexml
+*.trx
+BenchmarkDotNet.Artifacts/
+
+# Logs and temporary files
+*.binlog
+*.log
+*.tmp
+*.swp
+*~
+
+# IDE and user-specific files
+.vs/
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.userprefs
+*.sln.docstates
+
+# VS Code
+.vscode/*
+!.vscode/launch.json
+!.vscode/tasks.json
+!.vscode/settings.json
+!.vscode/extensions.json
+*.code-workspace
+.history/
+
+# Rider / IntelliJ
+.idea/
+*.sln.iml
+
+# NuGet packages
+*.nupkg
+*.snupkg
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini

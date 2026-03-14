@@ -1,0 +1,47 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:scott="clr-namespace:ScottPlot.Avalonia;assembly=ScottPlot.Avalonia"
+        x:Class="WaveformLoader.App.Views.WaveformPlotWindow"
+        RequestedThemeVariant="Light"
+        Background="#E2E8F0"
+        Width="1220"
+        Height="760"
+        MinWidth="900"
+        MinHeight="560"
+        Title="Waveform Plot">
+  <Grid RowDefinitions="Auto,*,Auto" Margin="18" RowSpacing="12">
+    <Border Padding="12" Background="#0F172A" CornerRadius="12">
+      <Grid ColumnDefinitions="Auto,Auto,Auto,*" ColumnSpacing="10">
+        <Button Content="Reset"
+                Click="ResetButton_OnClick" />
+        <Button Grid.Column="1"
+                Content="Fit"
+                Click="FitButton_OnClick" />
+        <Button Grid.Column="2"
+                Content="Open Another Waveform"
+                Click="OpenAnotherWaveformButton_OnClick" />
+        <TextBlock Grid.Column="3"
+                   VerticalAlignment="Center"
+                   Foreground="White"
+                   FontWeight="SemiBold"
+                   Text="{Binding SeriesSummary}" />
+      </Grid>
+    </Border>
+
+    <Border Grid.Row="1" Padding="10" Background="#FFFFFF" BorderBrush="#CBD5E1" BorderThickness="1" CornerRadius="12">
+      <scott:AvaPlot x:Name="PlotControl"
+                     Tapped="PlotControl_OnTapped" />
+    </Border>
+
+    <Grid Grid.Row="2" ColumnDefinitions="*,Auto" ColumnSpacing="12">
+      <Border Padding="12" Background="#F8FAFC" BorderBrush="#CBD5E1" BorderThickness="1" CornerRadius="10">
+        <TextBlock Text="{Binding StatusMessage}" TextWrapping="Wrap" />
+      </Border>
+      <Border Grid.Column="1" Padding="12" Background="#EFF6FF" BorderBrush="#93C5FD" BorderThickness="1" CornerRadius="10">
+        <TextBlock FontFamily="Consolas"
+                   FontSize="14"
+                   Text="{Binding SelectedPointText}" />
+      </Border>
+    </Grid>
+  </Grid>
+</Window>

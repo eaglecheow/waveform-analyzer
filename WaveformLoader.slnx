@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="WaveformLoader.App/WaveformLoader.App.csproj" />
+  <Project Path="WaveformLoader.Core/WaveformLoader.Core.csproj" />
+  <Project Path="WaveformLoader.Tests/WaveformLoader.Tests.csproj" />
+</Solution>

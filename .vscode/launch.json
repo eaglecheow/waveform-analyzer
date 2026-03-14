@@ -1,0 +1,19 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Launch WaveformLoader.App",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build-app",
+            "program": "${workspaceFolder}/WaveformLoader.App/bin/Debug/net10.0/WaveformLoader.App.dll",
+            "cwd": "${workspaceFolder}",
+            "stopAtEntry": false,
+            "console": "internalConsole",
+            "env": {
+                "DOTNET_CLI_HOME": "${workspaceFolder}/.dotnet",
+                "AVALONIA_TELEMETRY_OPTOUT": "1"
+            }
+        }
+    ]
+}

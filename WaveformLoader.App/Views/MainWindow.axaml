@@ -1,0 +1,147 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="WaveformLoader.App.Views.MainWindow"
+        Title="Waveform Loader"
+        RequestedThemeVariant="Light"
+        Background="#E2E8F0"
+        Width="1320"
+        Height="860"
+        MinWidth="1080"
+        MinHeight="720">
+  <Grid RowDefinitions="Auto,Auto,*,Auto" Margin="18">
+    <Border Padding="12" Background="#0F172A" CornerRadius="12">
+      <DockPanel LastChildFill="True">
+        <Button Content="Open .h5 File"
+                Classes="accent"
+                Click="OpenFileButton_OnClick" />
+        <TextBlock Margin="16,0,0,0"
+                   VerticalAlignment="Center"
+                   Foreground="White"
+                   FontWeight="SemiBold"
+                   Text="{Binding LoadedFilePath}" />
+      </DockPanel>
+    </Border>
+
+    <Grid Grid.Row="1" Margin="0,12,0,0" ColumnDefinitions="*,*">
+      <Border Padding="12" Background="#F8FAFC" BorderBrush="#CBD5E1" BorderThickness="1" CornerRadius="10">
+        <StackPanel Spacing="4">
+          <TextBlock FontSize="16" FontWeight="SemiBold" Text="Session Summary" />
+          <TextBlock Text="{Binding SummaryText}" />
+          <TextBlock Text="{Binding StatusMessage}" TextWrapping="Wrap" />
+        </StackPanel>
+      </Border>
+      <Border Grid.Column="1"
+              Margin="12,0,0,0"
+              Padding="12"
+              Background="#FFF7ED"
+              BorderBrush="#FDBA74"
+              BorderThickness="1"
+              CornerRadius="10"
+              IsVisible="{Binding HasWarnings}">
+        <StackPanel Spacing="4">
+          <TextBlock FontSize="16" FontWeight="SemiBold" Text="Warnings" />
+          <TextBlock Text="{Binding WarningMessage}" TextWrapping="Wrap" />
+        </StackPanel>
+      </Border>
+    </Grid>
+
+    <Grid Grid.Row="2" Margin="0,12,0,0" ColumnDefinitions="1.7*,1.3*" ColumnSpacing="16">
+      <Border Padding="14" Background="#FFFFFF" BorderBrush="#CBD5E1" BorderThickness="1" CornerRadius="12">
+        <Grid RowDefinitions="Auto,*" RowSpacing="12">
+          <StackPanel>
+            <TextBlock FontSize="18" FontWeight="SemiBold" Text="HDF5 Structure" />
+            <TextBlock Foreground="#475569" Text="Browse groups and datasets without loading waveform samples yet." />
+          </StackPanel>
+
+          <TreeView x:Name="StructureTreeView"
+                    Grid.Row="1"
+                    ItemsSource="{Binding RootNodes}"
+                    SelectionChanged="StructureTreeView_OnSelectionChanged">
+            <TreeView.ItemTemplate>
+              <TreeDataTemplate ItemsSource="{Binding Children}">
+                <StackPanel Spacing="2">
+                  <TextBlock FontWeight="SemiBold" Text="{Binding DisplayName}" />
+                  <TextBlock FontSize="12" Foreground="#64748B" Text="{Binding NodeSummary}" />
+                </StackPanel>
+              </TreeDataTemplate>
+            </TreeView.ItemTemplate>
+          </TreeView>
+        </Grid>
+      </Border>
+
+      <Grid Grid.Column="1" RowDefinitions="Auto,Auto,*" RowSpacing="16">
+        <Border Padding="14" Background="#FFFFFF" BorderBrush="#CBD5E1" BorderThickness="1" CornerRadius="12">
+          <Grid ColumnDefinitions="*,Auto,Auto" RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="8" ColumnSpacing="10">
+            <TextBlock Grid.ColumnSpan="3" FontSize="18" FontWeight="SemiBold" Text="Selected Node" />
+
+            <TextBlock Grid.Row="1" FontWeight="SemiBold" Text="Path" />
+            <TextBlock Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Text="{Binding SelectedNode.Path}" TextWrapping="Wrap" />
+
+            <TextBlock Grid.Row="2" FontWeight="SemiBold" Text="Kind" />
+            <TextBlock Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2" Text="{Binding SelectedNode.KindDisplay}" />
+
+            <TextBlock Grid.Row="3" FontWeight="SemiBold" Text="Shape" />
+            <TextBlock Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2" Text="{Binding SelectedNode.ShapeDisplay}" />
+
+            <TextBlock Grid.Row="4" FontWeight="SemiBold" Text="Element Type" />
+            <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding SelectedNode.ElementType}" />
+            <StackPanel Grid.Row="4" Grid.Column="2" Orientation="Horizontal" Spacing="8">
+              <Button Content="Use as Y"
+                      IsEnabled="{Binding CanUseSelectedAsY}"
+                      Click="UseSelectedAsYButton_OnClick" />
+              <Button Content="Use as X"
+                      IsEnabled="{Binding CanUseSelectedAsX}"
+                      Click="UseSelectedAsXButton_OnClick" />
+            </StackPanel>
+          </Grid>
+        </Border>
+
+        <Border Grid.Row="1" Padding="14" Background="#FFFFFF" BorderBrush="#CBD5E1" BorderThickness="1" CornerRadius="12">
+          <StackPanel Spacing="10">
+            <TextBlock FontSize="18" FontWeight="SemiBold" Text="Plot Selection" />
+            <StackPanel Spacing="4">
+              <TextBlock FontWeight="SemiBold" Text="Y Dataset" />
+              <ComboBox ItemsSource="{Binding PlottableDatasets}"
+                        SelectedItem="{Binding SelectedYDataset}"
+                        DisplayMemberBinding="{Binding DisplayName}" />
+            </StackPanel>
+            <StackPanel Spacing="4">
+              <TextBlock FontWeight="SemiBold" Text="X Dataset" />
+              <ComboBox ItemsSource="{Binding XAxisOptions}"
+                        SelectedItem="{Binding SelectedXDataset}"
+                        DisplayMemberBinding="{Binding DisplayName}" />
+            </StackPanel>
+            <Button Content="Open Plot Window"
+                    HorizontalAlignment="Left"
+                    Classes="accent"
+                    IsEnabled="{Binding CanPlot}"
+                    Click="PlotButton_OnClick" />
+          </StackPanel>
+        </Border>
+
+        <Border Grid.Row="2" Padding="14" Background="#FFFFFF" BorderBrush="#CBD5E1" BorderThickness="1" CornerRadius="12">
+          <Grid RowDefinitions="Auto,*" RowSpacing="10">
+            <TextBlock FontSize="18" FontWeight="SemiBold" Text="Attributes" />
+            <ScrollViewer Grid.Row="1">
+              <ItemsControl ItemsSource="{Binding SelectedNode.Attributes}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate>
+                    <Grid ColumnDefinitions="160,*" Margin="0,0,0,8" ColumnSpacing="10">
+                      <TextBlock FontWeight="SemiBold" Text="{Binding Name}" />
+                      <TextBlock Grid.Column="1" Text="{Binding DisplayValue}" TextWrapping="Wrap" />
+                    </Grid>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </ScrollViewer>
+          </Grid>
+        </Border>
+      </Grid>
+    </Grid>
+
+    <Border Grid.Row="3" Margin="0,12,0,0" Padding="12" Background="#EFF6FF" BorderBrush="#93C5FD" BorderThickness="1" CornerRadius="10">
+      <TextBlock TextWrapping="Wrap"
+                 Text="Workflow: open a file, inspect the dataset tree, optionally choose an X dataset, then open the waveform in a dedicated plot window." />
+    </Border>
+  </Grid>
+</Window>
