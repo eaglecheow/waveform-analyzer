@@ -4,6 +4,7 @@ public static class WaveformMeasurementCatalog
 {
     public static IReadOnlyList<IWaveformMeasurement> Default { get; } =
     [
+        new HistogramMeasurement(),
         new PeakToPeakMeasurement()
     ];
 }

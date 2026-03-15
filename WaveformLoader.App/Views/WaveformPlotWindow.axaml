@@ -2,6 +2,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:scott="clr-namespace:ScottPlot.Avalonia;assembly=ScottPlot.Avalonia"
         x:Class="WaveformLoader.App.Views.WaveformPlotWindow"
+        x:Name="PlotWindow"
         RequestedThemeVariant="Light"
         Background="#E2E8F0"
         Width="1220"
@@ -29,21 +30,138 @@
     </Border>
 
     <Grid Grid.Row="1" ColumnDefinitions="*,340" ColumnSpacing="12">
-      <Border Padding="10" Background="#FFFFFF" BorderBrush="#CBD5E1" BorderThickness="1" CornerRadius="12">
-        <scott:AvaPlot x:Name="PlotControl"
-                       Tapped="PlotControl_OnTapped" />
-      </Border>
+      <Grid RowDefinitions="*,Auto" ColumnDefinitions="*,Auto" ColumnSpacing="12" RowSpacing="12">
+        <Border Padding="10" Background="#FFFFFF" BorderBrush="#CBD5E1" BorderThickness="1" CornerRadius="12">
+          <scott:AvaPlot x:Name="PlotControl"
+                         Tapped="PlotControl_OnTapped" />
+        </Border>
+
+        <Border Grid.Column="1"
+                Width="180"
+                Padding="8"
+                Background="#F8FAFC"
+                BorderBrush="#CBD5E1"
+                BorderThickness="1"
+                CornerRadius="12"
+                IsVisible="{Binding IsHorizontalHistogramVisible}">
+          <scott:AvaPlot x:Name="HorizontalHistogramPlotControl"
+                         IsHitTestVisible="False" />
+        </Border>
+
+        <Border Grid.Row="1"
+                Height="180"
+                Padding="8"
+                Background="#F8FAFC"
+                BorderBrush="#CBD5E1"
+                BorderThickness="1"
+                CornerRadius="12"
+                IsVisible="{Binding IsVerticalHistogramVisible}">
+          <scott:AvaPlot x:Name="VerticalHistogramPlotControl"
+                         IsHitTestVisible="False" />
+        </Border>
+      </Grid>
 
       <Border Grid.Column="1" Padding="14" Background="#F8FAFC" BorderBrush="#CBD5E1" BorderThickness="1" CornerRadius="12">
-        <Grid RowDefinitions="Auto,Auto,*" RowSpacing="10">
+        <Grid RowDefinitions="Auto,Auto,Auto,Auto,*" RowSpacing="10">
           <TextBlock FontSize="18"
                      FontWeight="SemiBold"
                      Text="Measurements" />
           <TextBlock Grid.Row="1"
                      Foreground="#475569"
-                     Text="Selected measurement markers are shown on the plot."
+                     Text="Histogram stays independent from the selected marker measurement."
                      TextWrapping="Wrap" />
-          <ListBox Grid.Row="2"
+
+          <Border Grid.Row="2"
+                  Padding="12"
+                  Background="#FFFFFF"
+                  BorderBrush="#CBD5E1"
+                  BorderThickness="1"
+                  CornerRadius="10">
+            <StackPanel Spacing="10">
+              <TextBlock FontSize="15"
+                         FontWeight="SemiBold"
+                         Text="Histogram" />
+
+              <CheckBox Content="Show histogram"
+                        IsChecked="{Binding DataContext.IsHistogramEnabled, ElementName=PlotWindow}" />
+
+              <StackPanel Spacing="6">
+                <TextBlock FontWeight="SemiBold"
+                           Text="Orientation" />
+                <StackPanel Orientation="Horizontal" Spacing="12">
+                  <RadioButton GroupName="HistogramOrientation"
+                               Content="Horizontal"
+                               IsChecked="{Binding DataContext.IsHorizontalHistogramOrientation, ElementName=PlotWindow}" />
+                  <RadioButton GroupName="HistogramOrientation"
+                               Content="Vertical"
+                               IsChecked="{Binding DataContext.IsVerticalHistogramOrientation, ElementName=PlotWindow}" />
+                </StackPanel>
+              </StackPanel>
+
+              <StackPanel Spacing="6">
+                <TextBlock FontWeight="SemiBold"
+                           Text="Scope" />
+                <StackPanel Orientation="Horizontal" Spacing="12">
+                  <RadioButton GroupName="HistogramScope"
+                               Content="Whole waveform"
+                               IsChecked="{Binding DataContext.IsWholeWaveformHistogramScope, ElementName=PlotWindow}" />
+                  <RadioButton GroupName="HistogramScope"
+                               Content="Visible range"
+                               IsChecked="{Binding DataContext.IsVisibleRangeHistogramScope, ElementName=PlotWindow}" />
+                </StackPanel>
+              </StackPanel>
+
+              <StackPanel Spacing="6">
+                <TextBlock FontWeight="SemiBold"
+                           Text="Resolution" />
+                <ComboBox Width="120"
+                          ItemsSource="{Binding DataContext.HistogramResolutionOptions, ElementName=PlotWindow}"
+                          SelectedItem="{Binding DataContext.HistogramBinCount, ElementName=PlotWindow}" />
+                <TextBlock Foreground="#64748B"
+                           FontSize="12"
+                           Text="Higher bin counts show finer distribution detail." />
+              </StackPanel>
+
+              <StackPanel DataContext="{Binding HistogramMeasurementItem}" Spacing="8">
+                <TextBlock Foreground="#475569"
+                           Text="{Binding DetailText}"
+                           TextWrapping="Wrap" />
+
+                <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="10" RowSpacing="6">
+                  <TextBlock FontWeight="SemiBold" Text="Samples" />
+                  <TextBlock Grid.Column="1" FontFamily="Consolas" Text="{Binding HistogramSampleCountText}" />
+
+                  <TextBlock Grid.Row="1" FontWeight="SemiBold" Text="Min" />
+                  <TextBlock Grid.Row="1" Grid.Column="1" FontFamily="Consolas" Text="{Binding HistogramMinimumText}" />
+
+                  <TextBlock Grid.Row="2" FontWeight="SemiBold" Text="Max" />
+                  <TextBlock Grid.Row="2" Grid.Column="1" FontFamily="Consolas" Text="{Binding HistogramMaximumText}" />
+
+                  <TextBlock Grid.Row="3" FontWeight="SemiBold" Text="Mean" />
+                  <TextBlock Grid.Row="3" Grid.Column="1" FontFamily="Consolas" Text="{Binding HistogramMeanText}" />
+
+                  <TextBlock Grid.Row="4" FontWeight="SemiBold" Text="Median" />
+                  <TextBlock Grid.Row="4" Grid.Column="1" FontFamily="Consolas" Text="{Binding HistogramMedianText}" />
+
+                  <TextBlock Grid.Row="5" FontWeight="SemiBold" Text="Mode" />
+                  <TextBlock Grid.Row="5" Grid.Column="1" FontFamily="Consolas" Text="{Binding HistogramModeText}" />
+
+                  <TextBlock Grid.Row="6" FontWeight="SemiBold" Text="Variance" />
+                  <TextBlock Grid.Row="6" Grid.Column="1" FontFamily="Consolas" Text="{Binding HistogramVarianceText}" />
+
+                  <TextBlock Grid.Row="7" FontWeight="SemiBold" Text="Std Dev" />
+                  <TextBlock Grid.Row="7" Grid.Column="1" FontFamily="Consolas" Text="{Binding HistogramStandardDeviationText}" />
+                </Grid>
+              </StackPanel>
+            </StackPanel>
+          </Border>
+
+          <TextBlock Grid.Row="3"
+                     Foreground="#475569"
+                     Text="Selected measurement markers are shown on the main plot."
+                     TextWrapping="Wrap" />
+
+          <ListBox Grid.Row="4"
                    ItemsSource="{Binding Measurements}"
                    SelectedItem="{Binding SelectedMeasurement}"
                    Background="Transparent"

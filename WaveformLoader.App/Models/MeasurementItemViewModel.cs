@@ -28,4 +28,30 @@ public sealed class MeasurementItemViewModel
         : Result.DetailText;
 
     public IReadOnlyList<WaveformMeasurementMarker> Markers => Result.Markers;
+
+    public WaveformHistogramData? HistogramData => Result.HistogramData;
+
+    public WaveformHistogramStatistics? HistogramStatistics => Result.HistogramStatistics;
+
+    public string HistogramMinimumText => FormatHistogramValue(HistogramStatistics?.Min);
+
+    public string HistogramMaximumText => FormatHistogramValue(HistogramStatistics?.Max);
+
+    public string HistogramMeanText => FormatHistogramValue(HistogramStatistics?.Mean);
+
+    public string HistogramMedianText => FormatHistogramValue(HistogramStatistics?.Median);
+
+    public string HistogramModeText => FormatHistogramValue(HistogramStatistics?.Mode);
+
+    public string HistogramVarianceText => FormatHistogramValue(HistogramStatistics?.Variance);
+
+    public string HistogramStandardDeviationText => FormatHistogramValue(HistogramStatistics?.StandardDeviation);
+
+    public string HistogramSampleCountText => HistogramStatistics is { } statistics
+        ? statistics.SampleCount.ToString("N0")
+        : "0";
+
+    private static string FormatHistogramValue(double? value) => value is double numericValue
+        ? numericValue.ToString("G8")
+        : "Unavailable";
 }
