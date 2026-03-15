@@ -8,7 +8,9 @@ public sealed record WaveformMeasurementResult
         bool isAvailable,
         double? numericValue,
         string detailText,
-        IReadOnlyList<WaveformMeasurementMarker>? markers = null)
+        IReadOnlyList<WaveformMeasurementMarker>? markers = null,
+        WaveformHistogramData? histogramData = null,
+        WaveformHistogramStatistics? histogramStatistics = null)
     {
         Id = string.IsNullOrWhiteSpace(id)
             ? throw new ArgumentException("A measurement result must have an identifier.", nameof(id))
@@ -20,6 +22,8 @@ public sealed record WaveformMeasurementResult
         NumericValue = numericValue;
         DetailText = detailText ?? string.Empty;
         Markers = markers ?? Array.Empty<WaveformMeasurementMarker>();
+        HistogramData = histogramData;
+        HistogramStatistics = histogramStatistics;
     }
 
     public string Id { get; }
@@ -33,4 +37,8 @@ public sealed record WaveformMeasurementResult
     public string DetailText { get; }
 
     public IReadOnlyList<WaveformMeasurementMarker> Markers { get; }
+
+    public WaveformHistogramData? HistogramData { get; }
+
+    public WaveformHistogramStatistics? HistogramStatistics { get; }
 }

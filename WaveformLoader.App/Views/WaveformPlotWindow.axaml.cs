@@ -17,6 +17,8 @@ public partial class WaveformPlotWindow : Window
     private readonly WaveformSeries _series;
     private readonly WaveformPlotWindowViewModel _viewModel;
     private readonly AvaPlot _plotControl;
+    private readonly AvaPlot _horizontalHistogramPlotControl;
+    private readonly AvaPlot _verticalHistogramPlotControl;
     private readonly List<IPlottable> _measurementPlottables = [];
     private Signal? _signalPlot;
     private Scatter? _scatterPlot;
@@ -37,6 +39,10 @@ public partial class WaveformPlotWindow : Window
         Title = _viewModel.WindowTitle;
         _plotControl = this.FindControl<AvaPlot>("PlotControl")
             ?? throw new InvalidOperationException("Plot control was not found.");
+        _horizontalHistogramPlotControl = this.FindControl<AvaPlot>("HorizontalHistogramPlotControl")
+            ?? throw new InvalidOperationException("Horizontal histogram plot control was not found.");
+        _verticalHistogramPlotControl = this.FindControl<AvaPlot>("VerticalHistogramPlotControl")
+            ?? throw new InvalidOperationException("Vertical histogram plot control was not found.");
         _viewModel.PropertyChanged += ViewModel_OnPropertyChanged;
 
         Opened += (_, _) =>
@@ -52,10 +58,17 @@ public partial class WaveformPlotWindow : Window
 
         _plotControl.SizeChanged += (_, _) =>
         {
-            if (_isInitialized && !_series.UsesImplicitX)
+            if (!_isInitialized)
+            {
+                return;
+            }
+
+            if (!_series.UsesImplicitX)
             {
                 RefreshExplicitScatterForCurrentLimits();
             }
+
+            RenderHistogramPlots();
         };
 
         Closed += (_, _) => _viewModel.PropertyChanged -= ViewModel_OnPropertyChanged;
@@ -64,6 +77,9 @@ public partial class WaveformPlotWindow : Window
     private void ConfigurePlot()
     {
         _plotControl.Reset();
+        _horizontalHistogramPlotControl.Reset();
+        _verticalHistogramPlotControl.Reset();
+
         var plot = _plotControl.Plot;
         plot.Clear();
         plot.Title(System.IO.Path.GetFileName(_series.FilePath));
@@ -93,8 +109,10 @@ public partial class WaveformPlotWindow : Window
 
         _viewModel.RefreshMeasurements();
         FitToFullExtent(refreshControl: false);
+        SyncVisibleRangeWithPlot();
         RenderSelectedMeasurementMarkers(refreshControl: false);
-        _plotControl.Refresh();
+        RenderHistogramPlots(refreshControl: false);
+        RefreshPlotControls();
     }
 
     private void ResetButton_OnClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
@@ -138,13 +156,32 @@ public partial class WaveformPlotWindow : Window
         {
             RefreshExplicitScatterForCurrentLimits();
         }
+
+        SyncVisibleRangeWithPlot();
+        RenderHistogramPlots();
     }
 
     private void ViewModel_OnPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (_isInitialized && e.PropertyName == nameof(WaveformPlotWindowViewModel.SelectedMeasurement))
+        if (!_isInitialized)
+        {
+            return;
+        }
+
+        if (e.PropertyName == nameof(WaveformPlotWindowViewModel.SelectedMeasurement))
         {
             RenderSelectedMeasurementMarkers();
+            return;
+        }
+
+        if (e.PropertyName is nameof(WaveformPlotWindowViewModel.HistogramMeasurementItem) or
+            nameof(WaveformPlotWindowViewModel.IsHistogramEnabled) or
+            nameof(WaveformPlotWindowViewModel.HistogramOrientation) or
+            nameof(WaveformPlotWindowViewModel.HistogramScope) or
+            nameof(WaveformPlotWindowViewModel.IsHorizontalHistogramVisible) or
+            nameof(WaveformPlotWindowViewModel.IsVerticalHistogramVisible))
+        {
+            RenderHistogramPlots();
         }
     }
 
@@ -163,6 +200,7 @@ public partial class WaveformPlotWindow : Window
         }
 
         _plotControl.Plot.Axes.SetLimits(xMin, xMax, yMin, yMax);
+        SyncVisibleRangeWithPlot();
 
         if (!_series.UsesImplicitX)
         {
@@ -172,6 +210,8 @@ public partial class WaveformPlotWindow : Window
         {
             _plotControl.Refresh();
         }
+
+        RenderHistogramPlots(refreshControl);
     }
 
     private void RenderSelectedMeasurementMarkers(bool refreshControl = true)
@@ -222,6 +262,70 @@ public partial class WaveformPlotWindow : Window
         {
             _plotControl.Refresh();
         }
+    }
+
+    private void RenderHistogramPlots(bool refreshControl = true)
+    {
+        RenderHorizontalHistogramPlot(refreshControl);
+        RenderVerticalHistogramPlot(refreshControl);
+    }
+
+    private void RenderHorizontalHistogramPlot(bool refreshControl)
+    {
+        var plot = _horizontalHistogramPlotControl.Plot;
+        plot.Clear();
+        plot.HideLegend();
+        plot.XLabel("Count");
+        plot.YLabel(_series.YAxisLabel);
+
+        if (_viewModel.IsHorizontalHistogramVisible && _viewModel.HistogramMeasurementItem?.HistogramData is { } histogramData)
+        {
+            var barPlot = plot.Add.Bars(CreateHistogramBars(histogramData));
+            barPlot.Horizontal = true;
+            barPlot.Color = ScottPlot.Colors.CornflowerBlue;
+
+            var mainLimits = _plotControl.Plot.Axes.GetLimits();
+            var maxCount = Math.Max(1, histogramData.Counts.Max());
+            plot.Axes.SetLimits(0, maxCount * 1.05, mainLimits.Bottom, mainLimits.Top);
+        }
+
+        if (refreshControl)
+        {
+            _horizontalHistogramPlotControl.Refresh();
+        }
+    }
+
+    private void RenderVerticalHistogramPlot(bool refreshControl)
+    {
+        var plot = _verticalHistogramPlotControl.Plot;
+        plot.Clear();
+        plot.HideLegend();
+        plot.XLabel(_series.XAxisLabel);
+        plot.YLabel("Count");
+
+        if (_viewModel.IsVerticalHistogramVisible && _viewModel.HistogramMeasurementItem?.HistogramData is { } histogramData)
+        {
+            var barPlot = plot.Add.Bars(CreateHistogramBars(histogramData));
+            barPlot.Horizontal = false;
+            barPlot.Color = ScottPlot.Colors.CornflowerBlue;
+
+            var mainLimits = _plotControl.Plot.Axes.GetLimits();
+            var maxCount = Math.Max(1, histogramData.Counts.Max());
+            plot.Axes.SetLimits(mainLimits.Left, mainLimits.Right, 0, maxCount * 1.05);
+        }
+
+        if (refreshControl)
+        {
+            _verticalHistogramPlotControl.Refresh();
+        }
+    }
+
+    private void SyncVisibleRangeWithPlot()
+    {
+        var limits = _plotControl.Plot.Axes.GetLimits();
+        var minimum = Math.Min(limits.Left, limits.Right);
+        var maximum = Math.Max(limits.Left, limits.Right);
+        _viewModel.UpdateVisibleRange(new AxisRange(minimum, maximum));
     }
 
     private void RefreshExplicitScatterForCurrentLimits(bool useFullExtent = false, bool refreshControl = true)
@@ -277,6 +381,31 @@ public partial class WaveformPlotWindow : Window
         {
             _isRefreshingExplicitScatter = false;
         }
+    }
+
+    private void RefreshPlotControls()
+    {
+        _plotControl.Refresh();
+        _horizontalHistogramPlotControl.Refresh();
+        _verticalHistogramPlotControl.Refresh();
+    }
+
+    private static ScottPlot.Bar[] CreateHistogramBars(WaveformHistogramData histogramData)
+    {
+        var bars = new ScottPlot.Bar[histogramData.Counts.Length];
+
+        for (var index = 0; index < histogramData.Counts.Length; index++)
+        {
+            bars[index] = new ScottPlot.Bar
+            {
+                Position = histogramData.BinCenters[index],
+                Value = histogramData.Counts[index],
+                ValueBase = 0,
+                Size = Math.Abs(histogramData.BinEdges[index + 1] - histogramData.BinEdges[index])
+            };
+        }
+
+        return bars;
     }
 
     private static (ScottPlot.Color Color, Alignment Alignment, float OffsetY) GetMeasurementLineStyle(WaveformMeasurementMarker marker) =>
